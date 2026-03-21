@@ -1,0 +1,45 @@
+# Toda configuração não-sensível fica aqui
+# Configurações sensíveis (API keys) ficam no .env
+
+data:
+  raw_path: "data/raw/UCI_Credit_Card.csv"
+  processed_path: "data/processed/"
+  target_column: "default.payment.next.month"
+  test_size: 0.2
+  random_state: 42
+
+features:
+  columns_to_drop: ["ID"]
+  payment_history_months: 6
+  utilization_threshold: 0.8
+
+model:
+  default_threshold: 0.5
+  cv_folds: 5
+  optuna_trials: 50
+  models_to_compare: ["random_forest", "xgboost", "lightgbm"]
+  artifact_path: "models/"
+
+# Custo de negócio para otimização de threshold
+business:
+  cost_false_positive: 500    # custo de negar crédito a bom pagador (R$)
+  cost_false_negative: 2000   # custo de conceder crédito a inadimplente (R$)
+
+llm:
+  local_model: "phi3:mini"
+  fallback_model: "llama-3.1-8b-instant"  # Groq
+  timeout_seconds: 30
+  max_tokens: 500
+  prompt_version: "v2"
+
+logging:
+  level: "INFO"
+  format: "json"
+  rotation: "10 MB"
+  retention: "30 days"
+  audit_path: "audit_trail/"
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 1

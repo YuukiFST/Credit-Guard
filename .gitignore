@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Ambiente
+.env
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Dados e Modelos (pesados — versionar com DVC se necessário)
+data/processed/*.csv
+data/processed/*.parquet
+models/*.pkl
+models/*.joblib
+models/*.xgb
+
+# Logs e Auditoria
+logs/
+audit_trail/
+*.log
+
+# MLflow
+mlruns/
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/
+
+# Coverage
+.coverage
+htmlcov/
+coverage.xml
+
+
+
+# OS
+.DS_Store
+Thumbs.db
