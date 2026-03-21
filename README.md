@@ -1,123 +1,61 @@
-# 💳 Credit Guard — ML + GenAI para Análise de Risco de Crédito
+# Credit Guard
 
-> Sistema end-to-end de predição de inadimplência combinando XGBoost,
-> explicabilidade via SHAP e narrativas em linguagem natural via LLM.
-> Construído com boas práticas de engenharia de software: testes, CI/CD,
-> Docker e API REST.
-
-<!-- Badges -->
+Credit Guard predicts credit card default risk and explains its decisions. It uses XGBoost for the prediction, SHAP to extract the mathematical reasons, and an LLM to translate those reasons into text.
 
 ![CI](https://github.com/seu-usuario/CreditGuard/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/Python-3.12+-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-<!-- GIF da interface em ação -->
-<!-- ![Demo](docs/assets/demo.gif) -->
+## Quick Start
 
-## 🚀 Demonstração Rápida
+You need a Groq API key to run the LLM fallback. Get one at console.groq.com and add it to your `.env` file.
 
 ```bash
-# Clone o repositório
 git clone https://github.com/seu-usuario/CreditGuard.git
 cd CreditGuard
-
-# Opção 1: Docker Compose (recomendado)
 cp .env.example .env
 docker-compose up -d
-
-# Opção 2: Execução local
-make dev          # instala dependências + hooks
-make train        # treina modelos (RF, XGBoost, LightGBM)
-make api          # inicia API em localhost:8000
-make app          # inicia Streamlit em localhost:8501
 ```
 
-## 📊 Resultados
-
-> _As métricas de modelo serão adicionadas após o treinamento do modelo final com Optuna._\_
-
-## 🏗️ Arquitetura
-
-```
-📊 Dataset UCI          🧠 ML Pipeline           🌐 API REST          🖥️ Frontend
-Credit Card  ──→  Feature Engineering ──→  FastAPI /predict  ──→  Streamlit
-                  SMOTE + XGBoost            └─ /explain
-                  Calibração                    └─ /health
-                  SHAP                            │
-                                          🤖 LLM (Ollama→Groq)
-                                          📝 Audit Trail JSONL
-```
-
-## 🎯 Diferenciais vs Projetos Comuns
-
-| Aspecto        | Projeto Típico                | Credit Guard                           |
-| -------------- | ----------------------------- | -------------------------------------- |
-| Pacotes        | `pip` (Lento, síncrono)       | `uv` (Rust-based, 10-100x mais rápido) |
-| Modelos        | 1 modelo (RF), sem comparação | 3 modelos comparados com Optuna        |
-| Threshold      | Fixo em 0.5                   | Otimizado por custo-benefício          |
-| Probabilidades | Raw predict_proba             | Calibradas (CalibratedClassifierCV)    |
-| Validação      | Sem schema                    | Pydantic v2 completo                   |
-| API            | Apenas Streamlit              | FastAPI + Streamlit                    |
-| LLM            | Só Ollama local               | Fallback: Ollama → Groq                |
-| Guardrails     | Nenhum                        | Validação pós-geração                  |
-| Fairness       | Não analisado                 | Disparate Impact Ratio                 |
-| Testes         | Zero                          | >75% cobertura                         |
-| Drift          | Não monitorado                | PSI por feature                        |
-| Deploy         | Apenas local                  | Docker + CI/CD                         |
-
-## 📁 Estrutura do Projeto
-
-```
-CreditGuard/
-├── src/
-│   ├── config.py              # configuração central
-│   ├── data/                  # schemas Pydantic + loader
-│   ├── features/              # feature engineering + seleção
-│   ├── models/                # trainer, evaluator, calibrator, fairness, monitoring
-│   ├── explainability/        # SHAP explainer
-│   ├── llm/                   # client com fallback + guardrails
-│   ├── audit/                 # log imutável de decisões
-│   └── api/                   # FastAPI + routers
-├── app/                       # frontend Streamlit
-├── tests/                     # unit + integration
-├── notebooks/                 # EDA + model comparison
-├── Dockerfile                 # API
-├── Dockerfile.streamlit       # Streamlit
-├── docker-compose.yml         # 4 serviços
-├── Makefile                   # DX
-└── .github/workflows/ci.yml   # CI/CD
-```
-
-## 🧪 Testes
+To run it locally without Docker:
 
 ```bash
-# Rodar todos os testes com cobertura
-make test
-
-# Ou diretamente:
-pytest --cov=src --cov-report=html
+make dev
+make train
+make api
+make app
 ```
 
-## 🔧 Tecnologias
+## Architecture
 
-| Camada          | Tecnologia                              |
-| --------------- | --------------------------------------- |
-| ML              | scikit-learn, XGBoost, LightGBM, Optuna |
-| Explicabilidade | SHAP                                    |
-| LLM             | Ollama, Groq API                        |
-| API             | FastAPI, Pydantic v2                    |
-| Frontend        | Streamlit, Plotly                       |
-| Qualidade       | Ruff, mypy, pytest                      |
-| Infra           | Docker, GitHub Actions, MLflow, uv      |
-| Dados           | Pandas, imbalanced-learn (SMOTE)        |
+1. **Pipeline**: Loads the UCI Credit Card dataset, runs SMOTE for class balance, and trains the models.
+2. **Calibration**: Adjusts probabilities so a 0.8 score means an 80% chance of default.
+3. **API**: A FastAPI service takes client data, runs the calibrated model, and generates SHAP values.
+4. **Explanation**: An LLM (Ollama or Groq) reads the SHAP values and writes a summary.
 
-## 📚 Referências
+An audit trail saves every decision as JSONL.
 
-- [Dataset: UCI Credit Card](https://archive.ics.uci.edu/ml/datasets/default+of+credit+card+clients)
-- [SHAP Library](https://shap.readthedocs.io/)
-- [LGPD Art. 20](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm)
-- [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)
+## Project Structure
 
-## 📄 Licença
+- `src/api`: FastAPI and routing
+- `src/audit`: JSONL decision logs
+- `src/config.py`: Centralized settings
+- `src/data`: Pydantic schemas and data loaders
+- `src/explainability`: SHAP integration
+- `src/features`: Feature engineering
+- `src/llm`: Groq/Ollama clients and guardrails
+- `src/models`: Training, fairness, and drift monitoring
+- `app`: Streamlit frontend
+- `tests`: Pytest suite
 
-MIT License — veja [LICENSE](LICENSE) para detalhes.
+## Tests
+
+The CI pipeline runs pytest with coverage tracking. To run them locally:
+
+```bash
+make test
+```
+
+## License
+
+MIT License. See [LICENSE](LICENSE).
