@@ -1,24 +1,24 @@
 # Credit Guard
 
-Credit Guard estimates credit-card default risk and surfaces why the model said what it said: XGBoost (or another trained tree model) for the score, SHAP for feature impact, and an optional LLM (Groq or Ollama) to turn numbers into short text.
+O Credit Guard estima o risco de inadimplência em cartão de crédito e mostra **porquê** o modelo decidiu o que decidiu: um modelo em árvore (tipicamente XGBoost) para a pontuação, **SHAP** para o impacto de cada variável, e um **LLM** opcional (Groq ou Ollama) para transformar números em texto curto.
 
 ![CI](https://github.com/YuukiFST/Credit-Guard/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/Python-3.11+-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-## What you get
+## O que inclui
 
-- **REST API** (FastAPI): `/predict`, `/explain`, `/health`. Open `/docs` in the browser to try requests.
-- **Streamlit UI** (`app/streamlit_app.py`): forms and charts; it calls the API over HTTP.
-- **Training script** (`python -m src.models.trainer`): needs `data/raw/UCI_Credit_Card.csv` and writes `models/best_model.pkl` (gitignored; train locally or supply your own artifact).
+- **API REST** (FastAPI): rotas `/predict`, `/explain`, `/health`. Abre `/docs` no navegador para experimentar pedidos.
+- **Interface Streamlit** (`app/streamlit_app.py`): formulários e gráficos; fala com a API por HTTP.
+- **Treino** (`python -m src.models.trainer`): precisa de `data/raw/UCI_Credit_Card.csv` e grava `models/best_model.pkl` (ignorado pelo Git; treina localmente ou usa o teu próprio artefacto).
 
-## Requirements
+## Requisitos
 
 - Python 3.11+
-- Dependencies: `requirements.txt` (app) and `requirements-dev.txt` (tests, lint, types)
-- **Groq API key** in `.env` if you want `/explain` to use the cloud LLM path (see `.env.example`). Ollama remains an alternative if you run it yourself.
+- Dependências: `requirements.txt` (aplicação) e `requirements-dev.txt` (testes, lint, tipos)
+- **Chave Groq** no `.env` se quiseres que `/explain` use o LLM na nuvem (vê `.env.example`). **Ollama** continua como alternativa se o tiveres a correr.
 
-## Quick start (no Docker)
+## Início rápido (sem Docker)
 
 ```bash
 git clone https://github.com/YuukiFST/Credit-Guard.git
@@ -28,22 +28,22 @@ python -m venv .venv
 # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt -r requirements-dev.txt
 cp .env.example .env
-# Edit .env: set GROQ_API_KEY if you use Groq
+# Edita o .env: define GROQ_API_KEY se usares Groq
 ```
 
-Train once if you do not have `models/best_model.pkl`:
+Treina uma vez se ainda não tiveres `models/best_model.pkl`:
 
 ```bash
 python -m src.models.trainer
 ```
 
-Run the API (pick a free port if 8000 is blocked on your machine):
+Sobe a API (usa outra porta se a 8000 estiver ocupada no Windows):
 
 ```bash
 python -m uvicorn src.api.main:app --reload --host 127.0.0.1 --port 8001
 ```
 
-Run Streamlit in a second terminal. If the API is not on port 8000, set the base URL:
+Num segundo terminal, inicia o Streamlit. Se a API **não** estiver na porta 8000, define o URL base:
 
 ```bash
 export CREDITGUARD_API_URL=http://127.0.0.1:8001   # macOS/Linux
@@ -51,55 +51,55 @@ export CREDITGUARD_API_URL=http://127.0.0.1:8001   # macOS/Linux
 python -m streamlit run app/streamlit_app.py
 ```
 
-With **Make** (if `make` and `uv` are available):
+Com **Make** (se tiveres `make` e `uv`):
 
 ```bash
 make dev
-make train    # optional
+make train    # opcional
 make api
-make app      # in another shell
+make app      # noutro terminal
 ```
 
-## Docker (optional)
+## Docker (opcional)
 
 ```bash
 cp .env.example .env
 docker compose up -d
 ```
 
-Use this if you prefer containers over a local venv.
+Usa isto se preferires contentores em vez de um venv local.
 
-## How the pieces connect
+## Como encaixa tudo
 
-1. Load UCI-style rows, engineer features, train or load a serialized model.
-2. API validates JSON with Pydantic, runs the model and SHAP, optionally calls the LLM client.
-3. Streamlit is a thin client: it POSTs the same JSON shape to `/predict` and `/explain`.
+1. Carrega linhas no estilo UCI, aplica feature engineering, treina ou carrega o modelo serializado.
+2. A API valida o JSON com Pydantic, corre o modelo e o SHAP e, se estiver configurado, chama o cliente LLM.
+3. O Streamlit é um cliente fino: envia o mesmo formato JSON para `/predict` e `/explain`.
 
-Audit decisions go to JSONL under `audit_trail/` (ignored by git by default).
+As decisões podem ser registadas em JSONL em `audit_trail/` (por defeito ignorado pelo Git).
 
-## Repo layout
+## Estrutura do repositório
 
-- `src/api` — FastAPI app and routes
-- `src/audit` — JSONL audit logger
-- `src/config.py` — settings (YAML + env)
-- `src/data` — Pydantic schemas and loaders
-- `src/explainability` — SHAP helper
-- `src/features` — feature engineering
-- `src/llm` — LLM client and guardrails
-- `src/models` — training, metrics, calibration helpers
+- `src/api` — aplicação FastAPI e rotas
+- `src/audit` — registo de auditoria em JSONL
+- `src/config.py` — configuração (YAML + ambiente)
+- `src/data` — schemas Pydantic e carregamento de dados
+- `src/explainability` — integração SHAP
+- `src/features` — engenharia de atributos
+- `src/llm` — cliente LLM e guardrails
+- `src/models` — treino, métricas, calibração
 - `app` — Streamlit
 - `tests` — pytest
 
-For a longer architecture write-up, keep a private copy outside the repo (for example under a local-only `resources/` folder that you do not commit) or extend this README in your fork.
+Para documentação de arquitetura mais longa, guarda uma cópia **fora** do repositório (por exemplo numa pasta `resources/` só local que não commits) ou estende este README no teu fork.
 
-## Tests
+## Testes
 
 ```bash
 pytest
 ```
 
-`pyproject.toml` sets coverage options (including the minimum gate). If `make test` fails, use `pytest` directly or align the Makefile with the same `--cov-fail-under` as in `pyproject.toml`.
+O `pyproject.toml` define as opções de cobertura (incluindo o mínimo). Se `make test` falhar, corre `pytest` diretamente ou alinha o Makefile com o mesmo `--cov-fail-under` que está no `pyproject.toml`.
 
-## License
+## Licença
 
-MIT. See [LICENSE](LICENSE).
+MIT. Vê [LICENSE](LICENSE).
