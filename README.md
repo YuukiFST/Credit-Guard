@@ -2,7 +2,7 @@
 
 Credit Guard predicts credit card default risk and explains its decisions. It uses XGBoost for the prediction, SHAP to extract the mathematical reasons, and an LLM to translate those reasons into text.
 
-![CI](https://github.com/seu-usuario/CreditGuard/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/YuukiFST/Credit-Guard/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/Python-3.12+-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
@@ -11,8 +11,8 @@ Credit Guard predicts credit card default risk and explains its decisions. It us
 You need a Groq API key to run the LLM fallback. Get one at console.groq.com and add it to your `.env` file.
 
 ```bash
-git clone https://github.com/seu-usuario/CreditGuard.git
-cd CreditGuard
+git clone https://github.com/YuukiFST/Credit-Guard.git
+cd Credit-Guard
 cp .env.example .env
 docker-compose up -d
 ```
