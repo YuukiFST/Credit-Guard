@@ -1,6 +1,6 @@
 """Testes unitários para o cliente LLM com fallback."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 

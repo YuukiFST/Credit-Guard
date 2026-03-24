@@ -8,8 +8,8 @@ Responsabilidades:
 """
 
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from loguru import logger
+from sklearn.model_selection import train_test_split
 
 from src.config import settings
 
@@ -61,7 +61,8 @@ def split_data(
     y = df[target].astype(int)
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y,
+        X,
+        y,
         test_size=size,
         random_state=seed,
         stratify=y,

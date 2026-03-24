@@ -55,13 +55,17 @@ class FeatureSelector:
             shap_values = shap_values[1]  # classe positiva
 
         importance = np.abs(shap_values).mean(axis=0)
-        importance_df = pd.DataFrame({
-            "feature": X.columns,
-            "importance": importance,
-        }).sort_values("importance", ascending=False)
+        importance_df = pd.DataFrame(
+            {
+                "feature": X.columns,
+                "importance": importance,
+            }
+        ).sort_values("importance", ascending=False)
 
         # 2. Filtra por importância mínima
-        relevant = importance_df[importance_df["importance"] >= self.min_shap_importance]
+        relevant = importance_df[
+            importance_df["importance"] >= self.min_shap_importance
+        ]
         logger.info(
             f"Features relevantes (SHAP >= {self.min_shap_importance}): "
             f"{len(relevant)} de {len(importance_df)}"
@@ -79,7 +83,9 @@ class FeatureSelector:
                     imp_j = importance_df.set_index("feature").loc[feat_j, "importance"]
                     drop = feat_j if imp_i > imp_j else feat_i
                     to_drop.add(drop)
-                    logger.debug(f"Removendo {drop} (correlação {corr_matrix.iloc[i, j]:.2f})")
+                    logger.debug(
+                        f"Removendo {drop} (correlação {corr_matrix.iloc[i, j]:.2f})"
+                    )
 
         self.selected_features = [f for f in relevant["feature"] if f not in to_drop]
         logger.info(

@@ -1,7 +1,7 @@
 """Testes de integração da API FastAPI."""
 
 import pytest
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 
 from src.api.main import app
 

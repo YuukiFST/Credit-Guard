@@ -1,7 +1,7 @@
 """Testes unitários para feature engineering."""
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import pytest
 
 from src.features.engineer import FeatureEngineer

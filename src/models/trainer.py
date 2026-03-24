@@ -12,15 +12,14 @@ from pathlib import Path
 import joblib
 import mlflow
 import mlflow.sklearn
-import numpy as np
 import optuna
 import pandas as pd
+from lightgbm import LGBMClassifier
 from loguru import logger
 from optuna.samplers import TPESampler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 from xgboost import XGBClassifier
-from lightgbm import LGBMClassifier
 
 from src.config import settings
 from src.models.evaluator import calculate_full_metrics
@@ -60,9 +59,9 @@ def compare_models(
         with mlflow.start_run(run_name=model_name):
             best_params = optimizer_fn(X_train, y_train, n_trials=n_trials)
             model = _build_model(model_name, best_params)
-            model.fit(X_train, y_train)
+            model.fit(X_train, y_train)  # type: ignore[attr-defined]
 
-            y_proba = model.predict_proba(X_test)[:, 1]
+            y_proba = model.predict_proba(X_test)[:, 1]  # type: ignore[attr-defined]
             metrics = calculate_full_metrics(
                 y_test.values, y_proba, settings.model_default_threshold
             )
@@ -138,7 +137,9 @@ def _build_model(name: str, params: dict) -> object:
 
 
 def _optimize_random_forest(
-    X: pd.DataFrame, y: pd.Series, n_trials: int = 50,
+    X: pd.DataFrame,
+    y: pd.Series,
+    n_trials: int = 50,
 ) -> dict:
     """Otimiza hiperparâmetros do Random Forest via Optuna."""
 
@@ -162,7 +163,9 @@ def _optimize_random_forest(
 
 
 def _optimize_xgboost(
-    X: pd.DataFrame, y: pd.Series, n_trials: int = 50,
+    X: pd.DataFrame,
+    y: pd.Series,
+    n_trials: int = 50,
 ) -> dict:
     """Otimiza hiperparâmetros do XGBoost via Optuna."""
     scale_pos_weight = (y == 0).sum() / (y == 1).sum()
@@ -190,7 +193,9 @@ def _optimize_xgboost(
 
 
 def _optimize_lightgbm(
-    X: pd.DataFrame, y: pd.Series, n_trials: int = 50,
+    X: pd.DataFrame,
+    y: pd.Series,
+    n_trials: int = 50,
 ) -> dict:
     """Otimiza hiperparâmetros do LightGBM via Optuna."""
     scale_pos_weight = (y == 0).sum() / (y == 1).sum()
@@ -219,6 +224,7 @@ def _optimize_lightgbm(
 
 if __name__ == "__main__":
     from sklearn.model_selection import train_test_split
+
     from src.data.loader import load_raw_data
     from src.features.engineer import FeatureEngineer
 
@@ -238,7 +244,8 @@ if __name__ == "__main__":
 
     # 3. Split estratificado
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y,
+        X,
+        y,
         test_size=settings.data_test_size,
         random_state=settings.data_random_state,
         stratify=y,
@@ -248,7 +255,10 @@ if __name__ == "__main__":
     # 4. Treinar e comparar modelos
     logger.info("Iniciando comparação de modelos (RF vs XGBoost vs LightGBM)...")
     results = compare_models(
-        X_train, y_train, X_test, y_test,
+        X_train,
+        y_train,
+        X_test,
+        y_test,
         n_trials=settings.model_optuna_trials,
     )
 
@@ -257,7 +267,9 @@ if __name__ == "__main__":
 
     # 6. Resumo final
     logger.info("=== Resultados Finais ===")
-    for name, res in sorted(results.items(), key=lambda x: x[1]["roc_auc"], reverse=True):
+    for name, res in sorted(
+        results.items(), key=lambda x: x[1]["roc_auc"], reverse=True
+    ):
         m = res["metrics"]
         logger.info(
             f"  {name:15s} | ROC-AUC: {m['roc_auc']:.4f} | "
@@ -265,4 +277,3 @@ if __name__ == "__main__":
         )
     logger.info(f"Melhor modelo salvo em: {model_path}")
     logger.info("=== Pipeline concluído com sucesso! ===")
-

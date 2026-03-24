@@ -18,7 +18,10 @@ class TestCreditClientInput:
         with pytest.raises(ValueError, match="greater than"):
             CreditClientInput(
                 limit_balance=-1000.0,
-                age=35, sex=2, education=2, marriage=1,
+                age=35,
+                sex=2,
+                education=2,
+                marriage=1,
                 pay_history=[-1, -1, 0, 0, 1, 0],
                 bill_amounts=[0.0] * 6,
                 pay_amounts=[0.0] * 6,
@@ -29,7 +32,10 @@ class TestCreditClientInput:
         with pytest.raises(ValueError):
             CreditClientInput(
                 limit_balance=50000.0,
-                age=10, sex=2, education=2, marriage=1,
+                age=10,
+                sex=2,
+                education=2,
+                marriage=1,
                 pay_history=[-1, -1, 0, 0, 1, 0],
                 bill_amounts=[0.0] * 6,
                 pay_amounts=[0.0] * 6,
@@ -40,7 +46,10 @@ class TestCreditClientInput:
         with pytest.raises(ValueError, match="inválidos"):
             CreditClientInput(
                 limit_balance=50000.0,
-                age=35, sex=2, education=2, marriage=1,
+                age=35,
+                sex=2,
+                education=2,
+                marriage=1,
                 pay_history=[99, -1, 0, 0, 1, 0],
                 bill_amounts=[0.0] * 6,
                 pay_amounts=[0.0] * 6,
@@ -51,7 +60,10 @@ class TestCreditClientInput:
         with pytest.raises(ValueError):
             CreditClientInput(
                 limit_balance=50000.0,
-                age=35, sex=2, education=2, marriage=1,
+                age=35,
+                sex=2,
+                education=2,
+                marriage=1,
                 pay_history=[-1, -1, 0],  # apenas 3 meses
                 bill_amounts=[0.0] * 6,
                 pay_amounts=[0.0] * 6,
@@ -62,6 +74,8 @@ class TestCreditClientInput:
         df = sample_client_data.to_dataframe()
         assert len(df) == 1
         assert "LIMIT_BAL" in df.columns
-        assert "PAY_1" in df.columns
+        assert "PAY_0" in df.columns
+        assert "PAY_2" in df.columns
+        assert "PAY_1" not in df.columns
         assert "BILL_AMT6" in df.columns
         assert "PAY_AMT6" in df.columns

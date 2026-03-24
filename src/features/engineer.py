@@ -11,9 +11,28 @@ Para features que precisam de fit (ex: StandardScaler), usar
 o pipeline do scikit-learn que evita data leakage.
 """
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from loguru import logger
+
+
+def align_engineered_to_model(model: object, df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Reordena colunas para coincidir com `feature_names_in_` do modelo (treino).
+
+    Evita erro de mismatch quando o DataFrame tem as mesmas features noutra ordem.
+    """
+    names = getattr(model, "feature_names_in_", None)
+    if names is None:
+        return df
+    order = list(names)
+    missing = set(order) - set(df.columns)
+    if missing:
+        raise KeyError(
+            f"Features esperadas pelo modelo em falta: {sorted(missing)}. "
+            f"Colunas atuais: {sorted(df.columns)}"
+        )
+    return df.loc[:, order]
 
 
 class FeatureEngineer:
@@ -72,16 +91,15 @@ class FeatureEngineer:
     def _drop_unnecessary_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         """Remove colunas que não contribuem para o modelo."""
         cols_to_drop = [
-            c for c in self.COLUMNS_TO_DROP + [self.TARGET_COLUMN]
-            if c in df.columns
+            c for c in self.COLUMNS_TO_DROP + [self.TARGET_COLUMN] if c in df.columns
         ]
         return df.drop(columns=cols_to_drop)
 
     def _add_credit_utilization(self, df: pd.DataFrame) -> pd.DataFrame:
         """Razão fatura/limite — indicador de stress financeiro imediato."""
         df["CREDIT_UTILIZATION"] = (
-            df["BILL_AMT1"] / df["LIMIT_BAL"].replace(0, np.nan)
-        ).clip(0, 1).fillna(0)
+            (df["BILL_AMT1"] / df["LIMIT_BAL"].replace(0, np.nan)).clip(0, 1).fillna(0)
+        )
         return df
 
     def _add_utilization_growth(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -89,8 +107,10 @@ class FeatureEngineer:
         recent = df[["BILL_AMT1", "BILL_AMT2", "BILL_AMT3"]].mean(axis=1)
         older = df[["BILL_AMT4", "BILL_AMT5", "BILL_AMT6"]].mean(axis=1)
         df["UTILIZATION_GROWTH_6M"] = (
-            (recent - older) / df["LIMIT_BAL"].replace(0, np.nan)
-        ).fillna(0).clip(-1, 1)
+            ((recent - older) / df["LIMIT_BAL"].replace(0, np.nan))
+            .fillna(0)
+            .clip(-1, 1)
+        )
         return df
 
     def _add_payment_ratios(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -100,8 +120,8 @@ class FeatureEngineer:
             pay_col = f"PAY_AMT{month}"
             ratio_col = f"PAYMENT_RATIO_{month}"
             df[ratio_col] = (
-                df[pay_col] / df[bill_col].replace(0, np.nan)
-            ).clip(0, 2).fillna(1.0)  # sem fatura = pagamento completo
+                (df[pay_col] / df[bill_col].replace(0, np.nan)).clip(0, 2).fillna(1.0)
+            )  # sem fatura = pagamento completo
         return df
 
     def _add_payment_consistency(self, df: pd.DataFrame) -> pd.DataFrame:

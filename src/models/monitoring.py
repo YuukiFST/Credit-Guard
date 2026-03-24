@@ -40,7 +40,9 @@ def calculate_psi(
     expected_counts = np.clip(expected_counts, 1e-6, None)
     actual_counts = np.clip(actual_counts, 1e-6, None)
 
-    psi = np.sum((actual_counts - expected_counts) * np.log(actual_counts / expected_counts))
+    psi = np.sum(
+        (actual_counts - expected_counts) * np.log(actual_counts / expected_counts)
+    )
     return float(psi)
 
 
@@ -70,8 +72,10 @@ def check_feature_drift(
                 production_df[col].dropna().values,
             )
             status = (
-                "✅ Estável" if psi < 0.1
-                else "⚠️ Investigar" if psi < threshold
+                "✅ Estável"
+                if psi < 0.1
+                else "⚠️ Investigar"
+                if psi < threshold
                 else "🚨 Retreinar"
             )
             results[col] = {"psi": round(psi, 4), "status": status}

@@ -7,10 +7,9 @@ Todas as outras partes do código importam daqui — nunca hardcode valores.
 
 from pathlib import Path
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
 
 # Diretório raiz do projeto
 ROOT_DIR = Path(__file__).parent.parent
@@ -18,7 +17,7 @@ ROOT_DIR = Path(__file__).parent.parent
 
 def _load_yaml(path: Path) -> dict:
     """Carrega o arquivo YAML de configuração."""
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -38,37 +37,27 @@ class Settings(BaseSettings):
         env_file=ROOT_DIR / ".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
-        protected_namespaces=(),   # permite campos model_*
-        extra="ignore",            # ignora env vars não mapeadas
+        protected_namespaces=(),  # permite campos model_*
+        extra="ignore",  # ignora env vars não mapeadas
     )
 
     # Variáveis sensíveis — OBRIGATÓRIAS no .env (nunca no config.yaml)
-    groq_api_key: str = Field(default="", description="Chave da API Groq para fallback LLM")
+    groq_api_key: str = Field(
+        default="", description="Chave da API Groq para fallback LLM"
+    )
 
     # --- Data ---
-    data_raw_path: Path = Field(
-        default=ROOT_DIR / _yaml_config["data"]["raw_path"]
-    )
-    data_target_column: str = Field(
-        default=_yaml_config["data"]["target_column"]
-    )
-    data_test_size: float = Field(
-        default=_yaml_config["data"]["test_size"]
-    )
-    data_random_state: int = Field(
-        default=_yaml_config["data"]["random_state"]
-    )
+    data_raw_path: Path = Field(default=ROOT_DIR / _yaml_config["data"]["raw_path"])
+    data_target_column: str = Field(default=_yaml_config["data"]["target_column"])
+    data_test_size: float = Field(default=_yaml_config["data"]["test_size"])
+    data_random_state: int = Field(default=_yaml_config["data"]["random_state"])
 
     # --- Model ---
     model_default_threshold: float = Field(
         default=_yaml_config["model"]["default_threshold"]
     )
-    model_cv_folds: int = Field(
-        default=_yaml_config["model"]["cv_folds"]
-    )
-    model_optuna_trials: int = Field(
-        default=_yaml_config["model"]["optuna_trials"]
-    )
+    model_cv_folds: int = Field(default=_yaml_config["model"]["cv_folds"])
+    model_optuna_trials: int = Field(default=_yaml_config["model"]["optuna_trials"])
     model_artifact_path: Path = Field(
         default=ROOT_DIR / _yaml_config["model"]["artifact_path"]
     )
@@ -82,37 +71,19 @@ class Settings(BaseSettings):
     )
 
     # --- LLM ---
-    llm_local_model: str = Field(
-        default=_yaml_config["llm"]["local_model"]
-    )
-    llm_fallback_model: str = Field(
-        default=_yaml_config["llm"]["fallback_model"]
-    )
-    llm_timeout: int = Field(
-        default=_yaml_config["llm"]["timeout_seconds"]
-    )
-    llm_max_tokens: int = Field(
-        default=_yaml_config["llm"]["max_tokens"]
-    )
-    llm_prompt_version: str = Field(
-        default=_yaml_config["llm"]["prompt_version"]
-    )
+    llm_local_model: str = Field(default=_yaml_config["llm"]["local_model"])
+    llm_fallback_model: str = Field(default=_yaml_config["llm"]["fallback_model"])
+    llm_timeout: int = Field(default=_yaml_config["llm"]["timeout_seconds"])
+    llm_max_tokens: int = Field(default=_yaml_config["llm"]["max_tokens"])
+    llm_prompt_version: str = Field(default=_yaml_config["llm"]["prompt_version"])
 
     # --- Logging ---
-    logging_level: str = Field(
-        default=_yaml_config["logging"]["level"]
-    )
-    logging_audit_path: str = Field(
-        default=_yaml_config["logging"]["audit_path"]
-    )
+    logging_level: str = Field(default=_yaml_config["logging"]["level"])
+    logging_audit_path: str = Field(default=_yaml_config["logging"]["audit_path"])
 
     # --- API ---
-    api_host: str = Field(
-        default=_yaml_config["api"]["host"]
-    )
-    api_port: int = Field(
-        default=_yaml_config["api"]["port"]
-    )
+    api_host: str = Field(default=_yaml_config["api"]["host"])
+    api_port: int = Field(default=_yaml_config["api"]["port"])
 
 
 # Instância global — importar esta em todo o projeto

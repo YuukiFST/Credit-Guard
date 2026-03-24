@@ -7,8 +7,8 @@ Responsabilidades:
 - Converter entre formatos (dict ↔ DataFrame)
 """
 
-from pydantic import BaseModel, Field, field_validator, model_validator
 import pandas as pd
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class CreditClientInput(BaseModel):
@@ -55,7 +55,8 @@ class CreditClientInput(BaseModel):
         min_length=6,
         max_length=6,
         description=(
-            "Histórico de pagamento dos últimos 6 meses (PAY_1 a PAY_6). "
+            "Histórico de pagamento dos últimos 6 meses, alinhado ao UCI: "
+            "PAY_0, PAY_2, PAY_3, PAY_4, PAY_5, PAY_6 (nesta ordem). "
             "Valores: -2=sem consumo, -1=pago em dia, 0=uso do crédito rotativo, "
             "1-9=meses de atraso."
         ),
@@ -91,7 +92,8 @@ class CreditClientInput(BaseModel):
     def validate_pay_amounts_not_exceed_bill(self) -> "CreditClientInput":
         """Emite aviso se pagamentos excedem faturas consistentemente (possível erro de dados)."""
         overpayments = sum(
-            1 for pay, bill in zip(self.pay_amounts, self.bill_amounts)
+            1
+            for pay, bill in zip(self.pay_amounts, self.bill_amounts, strict=False)
             if pay > bill * 2 and bill > 0
         )
         if overpayments > 3:
@@ -110,10 +112,20 @@ class CreditClientInput(BaseModel):
             "EDUCATION": self.education,
             "MARRIAGE": self.marriage,
         }
-        for i, (pay, bill, pay_amt) in enumerate(
-            zip(self.pay_history, self.bill_amounts, self.pay_amounts), start=1
+        # UCI Credit Card: colunas PAY_0, PAY_2..PAY_6 (não existe PAY_1 no dataset original)
+        pay_uci_names = ["PAY_0", "PAY_2", "PAY_3", "PAY_4", "PAY_5", "PAY_6"]
+        for name, pay, bill, pay_amt in zip(
+            pay_uci_names,
+            self.pay_history,
+            self.bill_amounts,
+            self.pay_amounts,
+            strict=True,
         ):
-            row[f"PAY_{i}"] = pay
+            row[name] = pay
+        for i, (bill, pay_amt) in enumerate(
+            zip(self.bill_amounts, self.pay_amounts, strict=True),
+            start=1,
+        ):
             row[f"BILL_AMT{i}"] = bill
             row[f"PAY_AMT{i}"] = pay_amt
         return pd.DataFrame([row])
@@ -124,7 +136,8 @@ class PredictionOutput(BaseModel):
 
     client_id: str = Field(description="Identificador único gerado para a requisição.")
     default_probability: float = Field(
-        ge=0.0, le=1.0,
+        ge=0.0,
+        le=1.0,
         description="Probabilidade prevista de inadimplência.",
     )
     decision: str = Field(
@@ -133,7 +146,7 @@ class PredictionOutput(BaseModel):
     threshold_used: float = Field(
         description="Threshold utilizado para a decisão.",
     )
-    top_factors: list[dict[str, float]] = Field(
+    top_factors: list[dict[str, str | float]] = Field(
         description="Top 5 features e seus valores SHAP para esta predição.",
     )
     model_version: str = Field(

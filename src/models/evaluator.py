@@ -7,6 +7,8 @@ Responsabilidades:
 """
 
 import numpy as np
+from numpy.typing import NDArray
+from scipy.stats import ks_2samp
 from sklearn.metrics import (
     confusion_matrix,
     f1_score,
@@ -14,12 +16,11 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
-from scipy.stats import ks_2samp
 
 
 def calculate_full_metrics(
-    y_true: np.ndarray,
-    y_proba: np.ndarray,
+    y_true: NDArray[np.float64],
+    y_proba: NDArray[np.float64],
     threshold: float = 0.5,
 ) -> dict[str, float]:
     """
@@ -61,11 +62,11 @@ def calculate_full_metrics(
 
 
 def find_optimal_threshold(
-    y_true: np.ndarray,
-    y_proba: np.ndarray,
+    y_true: NDArray[np.float64],
+    y_proba: NDArray[np.float64],
     cost_false_positive: float,
     cost_false_negative: float,
-) -> dict[str, float | list]:
+) -> dict[str, float | dict[str, list[float]]]:
     """
     Encontra o threshold que minimiza o custo total de negócio.
 

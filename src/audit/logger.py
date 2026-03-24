@@ -8,7 +8,7 @@ Registra todas as predições para:
 """
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from loguru import logger
@@ -28,8 +28,7 @@ class AuditLogger:
         self.audit_dir = Path(settings.logging_audit_path)
         self.audit_dir.mkdir(parents=True, exist_ok=True)
         self.audit_file = (
-            self.audit_dir
-            / f"decisions_{datetime.now(timezone.utc).strftime('%Y%m')}.jsonl"
+            self.audit_dir / f"decisions_{datetime.now(UTC).strftime('%Y%m')}.jsonl"
         )
 
     def log_decision(
@@ -38,8 +37,8 @@ class AuditLogger:
         decision: str,
         probability: float,
         threshold: float,
-        top_factors: list[dict],
-        metadata: dict | None = None,
+        top_factors: list[dict[str, str | float]],
+        metadata: dict[str, object] | None = None,
     ) -> None:
         """
         Registra uma decisão de crédito no audit trail.
@@ -53,7 +52,7 @@ class AuditLogger:
             metadata: Dados adicionais opcionais.
         """
         record = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "request_id": request_id,
             "decision": decision,
             "probability": round(probability, 6),

@@ -1,8 +1,6 @@
 """Testes unitários para guardrails do LLM."""
 
-import pytest
-
-from src.llm.guardrails import validate_narrative, safe_generate
+from src.llm.guardrails import safe_generate, validate_narrative
 
 
 class TestGuardrails:

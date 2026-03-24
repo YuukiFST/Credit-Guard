@@ -5,15 +5,16 @@ Endpoint principal: POST /predict
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import cast
 
 from fastapi import APIRouter, HTTPException
 from loguru import logger
 
+from src.audit.logger import AuditLogger
 from src.config import settings
 from src.data.schemas import CreditClientInput, PredictionOutput
-from src.features.engineer import FeatureEngineer
-from src.audit.logger import AuditLogger
+from src.features.engineer import FeatureEngineer, align_engineered_to_model
 
 router = APIRouter()
 
@@ -33,8 +34,8 @@ async def predict_credit_risk(
 ) -> PredictionOutput:
     """Endpoint de predição de risco de crédito."""
     # Imports lazy — evita carregar MLflow/sklearn ao importar o módulo
-    from src.models.trainer import load_model
     from src.explainability.shap_explainer import SHAPExplainer
+    from src.models.trainer import load_model
 
     request_id = str(uuid.uuid4())
     used_threshold = threshold or settings.model_default_threshold
@@ -45,15 +46,18 @@ async def predict_credit_risk(
         fe = FeatureEngineer()
 
         df = client_data.to_dataframe()
-        df_engineered = fe.transform(df)
-        proba = float(model.predict_proba(df_engineered)[:, 1][0])  # type: ignore[union-attr]
+        df_engineered = align_engineered_to_model(model, fe.transform(df))
+        proba = float(model.predict_proba(df_engineered)[:, 1][0])  # type: ignore[attr-defined]
         decision = "NEGADO" if proba >= used_threshold else "APROVADO"
 
         explainer = SHAPExplainer(model)
         shap_values = explainer.explain_instance(df_engineered)
         top_factors = explainer.get_top_factors(
-            shap_values, feature_names=list(df_engineered.columns), n=5,
+            shap_values,
+            feature_names=list(df_engineered.columns),
+            n=5,
         )
+        factors_payload = cast(list[dict[str, str | float]], top_factors)
 
         # Audit trail
         audit = AuditLogger()
@@ -62,7 +66,7 @@ async def predict_credit_risk(
             decision=decision,
             probability=proba,
             threshold=used_threshold,
-            top_factors=top_factors,
+            top_factors=factors_payload,
         )
 
         return PredictionOutput(
@@ -70,9 +74,9 @@ async def predict_credit_risk(
             default_probability=round(proba, 4),
             decision=decision,
             threshold_used=used_threshold,
-            top_factors=top_factors,
+            top_factors=factors_payload,
             model_version="1.0.0",
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
         )
 
     except Exception as e:

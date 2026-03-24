@@ -5,7 +5,6 @@ Calcula métricas de fairness por grupo demográfico
 para compliance com LGPD (Art. 20) e regulamentações anti-discriminação.
 """
 
-import numpy as np
 import pandas as pd
 from loguru import logger
 
@@ -46,14 +45,16 @@ def calculate_fairness_metrics(
             / max((group_true == 0).sum(), 1)
         )
 
-        results.append({
-            "attribute": attribute_name,
-            "group": group,
-            "n_samples": int(mask.sum()),
-            "approval_rate": round(approval_rate, 4),
-            "true_positive_rate": round(tpr, 4),
-            "false_positive_rate": round(fpr, 4),
-        })
+        results.append(
+            {
+                "attribute": attribute_name,
+                "group": group,
+                "n_samples": int(mask.sum()),
+                "approval_rate": round(approval_rate, 4),
+                "true_positive_rate": round(tpr, 4),
+                "false_positive_rate": round(fpr, 4),
+            }
+        )
 
     df = pd.DataFrame(results)
 

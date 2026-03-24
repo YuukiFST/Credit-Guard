@@ -7,10 +7,16 @@ Responsabilidades:
 - Gerar contexto estatístico para os prompts do LLM
 """
 
-import shap
+from typing import TypedDict, cast
+
 import numpy as np
 import pandas as pd
-from loguru import logger
+import shap
+
+
+class TopFactorRow(TypedDict):
+    feature: str
+    shap_value: float
 
 
 class SHAPExplainer:
@@ -49,7 +55,7 @@ class SHAPExplainer:
         shap_values: np.ndarray,
         feature_names: list[str] | None = None,
         n: int = 5,
-    ) -> list[dict[str, float]]:
+    ) -> list[TopFactorRow]:
         """
         Extrai as top N features com maior impacto SHAP.
 
@@ -64,14 +70,19 @@ class SHAPExplainer:
         values = shap_values[0] if len(shap_values.shape) > 1 else shap_values
         names = feature_names or [f"feature_{i}" for i in range(len(values))]
 
-        df = pd.DataFrame({
-            "feature": names,
-            "shap_value": values,
-        })
+        df = pd.DataFrame(
+            {
+                "feature": names,
+                "shap_value": values,
+            }
+        )
         df["abs_val"] = df["shap_value"].abs()
         top = df.sort_values("abs_val", ascending=False).head(n)
 
-        return top[["feature", "shap_value"]].to_dict(orient="records")
+        return cast(
+            list[TopFactorRow],
+            top[["feature", "shap_value"]].to_dict(orient="records"),
+        )
 
     def get_statistical_context(
         self,
@@ -92,12 +103,15 @@ class SHAPExplainer:
         """
         default_rate = float(y_train.mean())
         # Percentil do cliente no modelo
-        all_probas = self.model.predict_proba(X_train)[:, 1]  # type: ignore[union-attr]
-        client_percentile = float(np.percentile(
-            np.searchsorted(np.sort(all_probas), client_proba)
-            / len(all_probas) * 100,
-            50,
-        ))
+        all_probas = self.model.predict_proba(X_train)[:, 1]  # type: ignore[attr-defined]
+        client_percentile = float(
+            np.percentile(
+                np.searchsorted(np.sort(all_probas), client_proba)
+                / len(all_probas)
+                * 100,
+                50,
+            )
+        )
 
         return {
             "default_rate": default_rate,

@@ -7,7 +7,6 @@ Protege contra: promessas indevidas, PII, linguagem discriminatória.
 
 from loguru import logger
 
-
 # Termos que NUNCA devem aparecer na narrativa gerada
 BLOCKED_TERMS: list[str] = [
     "garanto",
@@ -51,15 +50,21 @@ def validate_narrative(
 
     # 2. Consistência com decisão
     if decision == "NEGADO" and "foi aprovado" in narrative_lower:
-        logger.warning("Guardrail: narrativa inconsistente (diz aprovado, decisão negado)")
+        logger.warning(
+            "Guardrail: narrativa inconsistente (diz aprovado, decisão negado)"
+        )
         return False, "Narrativa inconsistente com a decisão"
     if decision == "APROVADO" and "foi negado" in narrative_lower:
-        logger.warning("Guardrail: narrativa inconsistente (diz negado, decisão aprovado)")
+        logger.warning(
+            "Guardrail: narrativa inconsistente (diz negado, decisão aprovado)"
+        )
         return False, "Narrativa inconsistente com a decisão"
 
     # 3. Tamanho
     if len(narrative) > MAX_NARRATIVE_LENGTH:
-        logger.info(f"Guardrail: narrativa excede tamanho máximo ({len(narrative)} chars)")
+        logger.info(
+            f"Guardrail: narrativa excede tamanho máximo ({len(narrative)} chars)"
+        )
         return False, "Narrativa excede tamanho máximo"
 
     return True, "OK"

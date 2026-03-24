@@ -4,14 +4,13 @@ Aplicação FastAPI principal.
 Ponto de entrada da API REST de risco de crédito.
 """
 
-from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
-from typing import Any
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from loguru import logger
 
-from src.api.routers import predict, explain, health
+from src.api.routers import explain, health, predict
 
 
 @asynccontextmanager

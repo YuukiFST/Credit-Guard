@@ -12,6 +12,9 @@ build/
 venv/
 env/
 
+# Recursos locais (não versionar)
+resources/
+
 # IDE
 .vscode/
 .idea/

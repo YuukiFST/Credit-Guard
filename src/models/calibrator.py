@@ -38,7 +38,7 @@ def calibrate_model(
     )
     calibrated.fit(X_val, y_val)
 
-    y_proba_before = model.predict_proba(X_val)[:, 1]  # type: ignore[union-attr]
+    y_proba_before = model.predict_proba(X_val)[:, 1]  # type: ignore[attr-defined]
     y_proba_after = calibrated.predict_proba(X_val)[:, 1]
 
     brier_before = float(np.mean((y_proba_before - y_val) ** 2))

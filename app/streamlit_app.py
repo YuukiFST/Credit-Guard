@@ -5,6 +5,8 @@ Frontend interativo que conecta ao modelo de ML
 e à API de explicação via LLM.
 """
 
+import os
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -13,6 +15,7 @@ import plotly.graph_objects as go
 import httpx
 import asyncio
 
+API_BASE = os.environ.get("CREDITGUARD_API_URL", "http://127.0.0.1:8000").rstrip("/")
 
 # ─── Configuração da página ───
 st.set_page_config(
@@ -119,7 +122,7 @@ if analyze_btn:
         try:
             # Tenta chamar a API
             response = httpx.post(
-                f"http://localhost:8000/predict?threshold={threshold}",
+                f"{API_BASE}/predict?threshold={threshold}",
                 json=payload,
                 timeout=30,
             )
@@ -165,7 +168,7 @@ if analyze_btn:
                 st.subheader("🤖 Explicação em Linguagem Natural")
                 try:
                     explain_response = httpx.post(
-                        f"http://localhost:8000/explain?threshold={threshold}",
+                        f"{API_BASE}/explain?threshold={threshold}",
                         json=payload,
                         timeout=60,
                     )

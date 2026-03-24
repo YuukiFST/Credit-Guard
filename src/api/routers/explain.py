@@ -6,14 +6,18 @@ Combina SHAP com LLM para gerar explicação em linguagem natural.
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any
 
 from fastapi import APIRouter, HTTPException
+
+if TYPE_CHECKING:
+    from src.explainability.shap_explainer import TopFactorRow
 from loguru import logger
 
 from src.config import settings
 from src.data.schemas import CreditClientInput
-from src.features.engineer import FeatureEngineer
+from src.features.engineer import FeatureEngineer, align_engineered_to_model
 from src.llm.guardrails import safe_generate
 
 router = APIRouter()
@@ -30,12 +34,12 @@ router = APIRouter()
 async def explain_decision(
     client_data: CreditClientInput,
     threshold: float | None = None,
-) -> dict:
+) -> dict[str, Any]:
     """Endpoint de explicação via LLM."""
     # Imports lazy — evita carregar MLflow/sklearn ao importar o módulo
-    from src.models.trainer import load_model
     from src.explainability.shap_explainer import SHAPExplainer
     from src.llm.client import LLMClientWithFallback
+    from src.models.trainer import load_model
 
     request_id = str(uuid.uuid4())
     used_threshold = threshold or settings.model_default_threshold
@@ -46,15 +50,17 @@ async def explain_decision(
         fe = FeatureEngineer()
 
         df = client_data.to_dataframe()
-        df_engineered = fe.transform(df)
-        proba = float(model.predict_proba(df_engineered)[:, 1][0])  # type: ignore[union-attr]
+        df_engineered = align_engineered_to_model(model, fe.transform(df))
+        proba = float(model.predict_proba(df_engineered)[:, 1][0])  # type: ignore[attr-defined]
         decision = "NEGADO" if proba >= used_threshold else "APROVADO"
 
         # SHAP
         explainer = SHAPExplainer(model)
         shap_values = explainer.explain_instance(df_engineered)
         top_factors = explainer.get_top_factors(
-            shap_values, feature_names=list(df_engineered.columns), n=5,
+            shap_values,
+            feature_names=list(df_engineered.columns),
+            n=5,
         )
 
         # LLM com fallback
@@ -78,7 +84,7 @@ async def explain_decision(
             "threshold_used": used_threshold,
             "narrative": narrative,
             "top_factors": top_factors,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     except Exception as e:
@@ -92,13 +98,12 @@ async def explain_decision(
 def _build_explain_prompt(
     decision: str,
     probability: float,
-    top_factors: list[dict],
+    top_factors: list["TopFactorRow"],
 ) -> str:
     """Constrói o prompt para geração de narrativa."""
-    factors_text = "\n".join([
-        f"- {f['feature']}: SHAP value = {f['shap_value']:.4f}"
-        for f in top_factors
-    ])
+    factors_text = "\n".join(
+        [f"- {f['feature']}: SHAP value = {f['shap_value']:.4f}" for f in top_factors]
+    )
     return f"""
 DECISÃO DE CRÉDITO: {decision}
 Probabilidade de inadimplência: {probability:.1%}

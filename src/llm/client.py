@@ -36,7 +36,10 @@ class OllamaClient:
                     "prompt": prompt,
                     "system": system_prompt,
                     "stream": False,
-                    "options": {"temperature": 0.3, "num_predict": settings.llm_max_tokens},
+                    "options": {
+                        "temperature": 0.3,
+                        "num_predict": settings.llm_max_tokens,
+                    },
                 },
             )
             response.raise_for_status()
